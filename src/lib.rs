@@ -1,4 +1,4 @@
-use vector::{Vector, P2d};
+pub use vector::{Vector, P2d};
 
 mod vector;
 
