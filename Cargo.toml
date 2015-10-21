@@ -1,0 +1,8 @@
+[package]
+name = "graph-layout"
+version = "0.0.1"
+authors = ["Michael Neumann <mneumann@ntecs.de>"]
+license = "MIT"
+repository = "https://github.com/mneumann/graph-layout-rs"
+description = "Graph-Layouting Algorithms"
+keywords = ["graph", "algorithm", "layout"]
