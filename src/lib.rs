@@ -2,6 +2,7 @@ pub use vector::{Vector, P2d};
 
 mod vector;
 
+// k_s == l
 #[inline]
 fn attractive_force<V>(p1: &V, p2: &V, k_s: f32) -> V where V: Vector<Scalar=f32>
 {
@@ -12,6 +13,7 @@ fn attractive_force<V>(p1: &V, p2: &V, k_s: f32) -> V where V: Vector<Scalar=f32
     return force;
 }
 
+// k_r == l^2
 #[inline]
 fn repulsive_force<V>(p1: &V, p2: &V, k_r: f32) -> V where V: Vector<Scalar=f32>
 {
@@ -47,11 +49,9 @@ fn calculate_node_forces<V>(forces: &mut[V], node_positions: &[V], node_neighbor
     // Calculate spring force between adjacent pairs.
     for i1 in 0 .. n {
         for i2 in node_neighbors[i1].iter().map(|&i| i as usize) {
-            if i1 < i2 {
-                let force = attractive_force(&node_positions[i1], &node_positions[i2], k_s);
-                forces[i1].add_scaled(-1.0, &force);
-                forces[i2].add_scaled(1.0, &force);
-            }
+            let force = attractive_force(&node_positions[i1], &node_positions[i2], k_s);
+            forces[i1].add_scaled(-1.0, &force);
+            forces[i2].add_scaled(1.0, &force);
         }
     }
 }
@@ -103,20 +103,26 @@ where V: Vector<Scalar=f32>, F: Fn(usize) -> f32
     }
 }
 
-pub fn typical_fruchterman_reingold_2d(area: f32, node_positions: &mut[P2d], node_neighbors: &[Vec<usize>]) {
+pub fn typical_fruchterman_reingold_2d(node_positions: &mut[P2d], node_neighbors: &[Vec<usize>]) {
     let n = node_positions.len();
     assert!(node_neighbors.len() == n);
 
     const MAX_ITER: usize = 300;
-    const EPS: f32 = 0.1;
-    const OPT_PAIR_SQR_DIST_SCALE: f32 = 0.3;
+    const EPS: f32 = 0.01;
 
+    const OPT_PAIR_SQR_DIST_SCALE: f32 = 1.0;
+
+    let temp = 0.1f32;
+    let dt = temp / (MAX_ITER as f32);
     let min_pos = P2d(0.0, 0.0);
     let max_pos = P2d(1.0, 1.0);
-    let step_fn = |iter| { 1.0 / (1.0 + (iter as f32) * 0.1) };
+    let step_fn = |iter| { temp - (iter as f32 * dt) };
 
-    let k_r: f32 = OPT_PAIR_SQR_DIST_SCALE * area / (n as f32);
-    let k_s = k_r.sqrt();
+    // `l`: ideal length of spring
+    let l: f32 = (OPT_PAIR_SQR_DIST_SCALE / (n as f32)).sqrt();
+
+    let k_r = l * l;
+    let k_s = l;
 
     fruchterman_reingold(step_fn, MAX_ITER, EPS, k_r, k_s, &min_pos, &max_pos, node_positions, node_neighbors);
 }
