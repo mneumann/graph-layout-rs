@@ -103,14 +103,12 @@ where V: Vector<Scalar=f32>, F: Fn(usize) -> f32
     }
 }
 
-pub fn typical_fruchterman_reingold_2d(node_positions: &mut[P2d], node_neighbors: &[Vec<usize>]) {
+pub fn typical_fruchterman_reingold_2d(l: Option<f32>, node_positions: &mut[P2d], node_neighbors: &[Vec<usize>]) {
     let n = node_positions.len();
     assert!(node_neighbors.len() == n);
 
     const MAX_ITER: usize = 300;
     const EPS: f32 = 0.01;
-
-    const OPT_PAIR_SQR_DIST_SCALE: f32 = 1.0;
 
     let temp = 0.1f32;
     let dt = temp / (MAX_ITER as f32);
@@ -119,9 +117,9 @@ pub fn typical_fruchterman_reingold_2d(node_positions: &mut[P2d], node_neighbors
     let step_fn = |iter| { temp - (iter as f32 * dt) };
 
     // `l`: ideal length of spring
-    let l: f32 = (OPT_PAIR_SQR_DIST_SCALE / (n as f32)).sqrt();
+    let l: f32 = l.unwrap_or((1.0 / n as f32).sqrt());
 
-    let k_r = l * l;
+    let k_r = l*l;
     let k_s = l;
 
     fruchterman_reingold(step_fn, MAX_ITER, EPS, k_r, k_s, &min_pos, &max_pos, node_positions, node_neighbors);
