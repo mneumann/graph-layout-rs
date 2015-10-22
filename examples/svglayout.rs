@@ -100,6 +100,10 @@ fn draw_graph(g: graph_generators::Graph, filename: &str, l: Option<f32>) {
 
 fn main() {
     let mut rng = rand::thread_rng();
+
+    let g = graph_generators::barabasi_albert_graph(&mut rng, 50, 1);
+    draw_graph(g, "barabasi_albert_50_1.svg", Some(0.03));
+
     let g = graph_generators::barabasi_albert_graph(&mut rng, 20, 3);
     draw_graph(g, "barabasi_albert_20_3.svg", None);
 
