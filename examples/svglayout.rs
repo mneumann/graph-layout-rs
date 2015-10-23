@@ -4,62 +4,10 @@ extern crate rand;
 
 use rand::{random, Closed01};
 use graph_layout::P2d;
-use std::io::Write;
-
-struct SvgCanvas {
-    width: f32,
-    height: f32,
-    border: f32,
-    radius: f32,
-    scalex: f32,
-    scaley: f32,
-    offsetx: f32,
-    offsety: f32,
-}
-
-struct SvgWriter {
-    canvas: SvgCanvas,
-    wr: Box<Write>,
-}
-
-impl SvgWriter {
-    fn new(canvas: SvgCanvas, wr: Box<Write>) -> SvgWriter {
-        SvgWriter{canvas: canvas, wr: wr}
-    }
-
-    fn header(&mut self) {
-        writeln!(&mut self.wr, r#"<?xml version="1.0" encoding="UTF-8"?>
-                <svg xmlns="http://www.w3.org/2000/svg"
-                version="1.1" baseProfile="full"
-                width="100%" height="100%"
-                viewBox="{} {} {} {}">"#, 0, 0, self.canvas.width+2.0*self.canvas.border, self.canvas.height+2.0*self.canvas.border).unwrap();
-    }
-
-    fn footer(&mut self) {
-        writeln!(&mut self.wr, "</svg>").unwrap();
-    }
-
-    fn node(&mut self, pos: &P2d) {
-        let x = self.canvas.border + (pos.0*self.canvas.scalex) + self.canvas.offsetx;
-        let y = self.canvas.border + (pos.1*self.canvas.scaley) + self.canvas.offsety;
-        writeln!(&mut self.wr, r#"<circle cx="{}" cy="{}" r="{}" stroke="black" stroke-width="1px" fill="red" />"#,
-                 x, y, self.canvas.radius).unwrap();
-    }
-
-    fn edge(&mut self, pos1: &P2d, pos2: &P2d) {
-        let x1 = self.canvas.border + (pos1.0*self.canvas.scalex) + self.canvas.offsetx;
-        let y1 = self.canvas.border + (pos1.1*self.canvas.scaley) + self.canvas.offsety;
-        let x2 = self.canvas.border + (pos2.0*self.canvas.scalex) + self.canvas.offsetx;
-        let y2 = self.canvas.border + (pos2.1*self.canvas.scaley) + self.canvas.offsety;
-
-         writeln!(&mut self.wr, r#"<line x1="{}" y1="{}" x2="{}" y2="{}" stroke="black" stroke-width="1px" />"#,
-                  x1, y1, x2, y2).unwrap();
-    }
-}
-
+use graph_layout::svg_writer::{SvgCanvas, SvgWriter};
+use std::fs::File;
 
 fn draw_graph(g: graph_generators::Graph, filename: &str, l: Option<f32>) {
-    use std::fs::File;
     let mut node_positions: Vec<P2d> = g.nodes.iter().map(|_| P2d(random::<Closed01<f32>>().0, random::<Closed01<f32>>().0)).collect();
     let mut node_neighbors: Vec<Vec<usize>> = g.nodes.iter().map(|_| Vec::new()).collect();
     for &(src, dst) in g.edges.iter() {
@@ -70,16 +18,8 @@ fn draw_graph(g: graph_generators::Graph, filename: &str, l: Option<f32>) {
                                             &mut node_positions[..],
                                             &node_neighbors);
 
-    let canvas = SvgCanvas{
-        width:1000.0,
-        height:1000.0,
-        border:40.0,
-        radius:10.0,
-        scalex: 1000.0,
-        scaley: 1000.0,
-        offsetx: 0.0,
-        offsety: 0.0};
-    let mut svg_wr = SvgWriter::new(canvas, Box::new(File::create(filename).unwrap()));
+    let mut file = File::create(filename).unwrap();
+    let mut svg_wr = SvgWriter::new(SvgCanvas::default_for_unit_layout(), &mut file);
 
     svg_wr.header();
 
