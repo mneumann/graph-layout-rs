@@ -72,4 +72,22 @@ impl<'a> SvgWriter<'a> {
          writeln!(&mut self.wr, r#"<line x1="{}" y1="{}" x2="{}" y2="{}" stroke="{}" stroke-width="{}px" />"#,
                   x1, y1, x2, y2, self.canvas.stroke_color, self.canvas.stroke_width).unwrap();
     }
+
+    pub fn draw_graph(mut self, node_positions: &Vec<P2d>, node_neighbors: &Vec<Vec<usize>>) {
+        self.header();
+        // start with the edges
+        for (i, pos1) in node_positions.iter().enumerate() {
+            for &n in node_neighbors[i].iter() {
+                let pos2 = &node_positions[n];
+                self.edge(&pos1, &pos2);
+            }
+        }
+
+        // then with the nodes.
+        for pos1 in node_positions.iter() {
+            self.node(&pos1);
+        }
+
+        self.footer();
+    }
 }

@@ -19,23 +19,8 @@ fn draw_graph(g: graph_generators::Graph, filename: &str, l: Option<f32>) {
                                             &node_neighbors);
 
     let mut file = File::create(filename).unwrap();
-    let mut svg_wr = SvgWriter::new(SvgCanvas::default_for_unit_layout(), &mut file);
-
-    svg_wr.header();
-
-    for (i, pos1) in node_positions.iter().enumerate() {
-        for &n in node_neighbors[i].iter() {
-            let pos2 = &node_positions[n];
-
-             svg_wr.edge(&pos1, &pos2);
-        }
-    }
-
-    for pos1 in node_positions.iter() {
-        svg_wr.node(&pos1);
-    }
-
-    svg_wr.footer();
+    let svg_wr = SvgWriter::new(SvgCanvas::default_for_unit_layout(), &mut file);
+    svg_wr.draw_graph(&node_positions, &node_neighbors);
 }
 
 fn main() {
