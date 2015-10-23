@@ -66,7 +66,7 @@ fn draw_graph(g: graph_generators::Graph, filename: &str, l: Option<f32>) {
         node_neighbors[src].push(dst);
     }
 
-    graph_layout::typical_fruchterman_reingold_2d(l,
+    graph_layout::fruchterman_reingold::layout_typical_2d(l,
                                             &mut node_positions[..],
                                             &node_neighbors);
 
