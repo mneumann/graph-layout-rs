@@ -77,6 +77,10 @@ impl<'a> SvgWriter<'a> {
         let dx = x2 - x1;
         let dy = y2 - y1;
 
+        if dx.abs() < 1.0/self.canvas.width && dy.abs() < 1.0/self.canvas.height {
+            return;
+        }
+
         let mx = x1 + 0.5 * dx;
         let my = y1 + 0.5 * dy;
 
