@@ -17,13 +17,13 @@ pub trait Vector: Clone {
 }
 
 #[derive(Debug, Copy, Clone)]
-pub struct P2d (pub f32, pub f32);
+pub struct P2d(pub f32, pub f32);
 
 impl Vector for P2d {
     type Scalar = f32;
 
     fn new() -> Self {
-        P2d (0.0, 0.0)
+        P2d(0.0, 0.0)
     }
 
     fn length_squared(&self) -> f32 {
@@ -41,7 +41,7 @@ impl Vector for P2d {
     }
 
     fn sub(&self, other: &Self) -> Self {
-        P2d (self.0 - other.0, self.1 - other.1)
+        P2d(self.0 - other.0, self.1 - other.1)
     }
 
     fn add_scaled(&mut self, factor: f32, other: &P2d) {
