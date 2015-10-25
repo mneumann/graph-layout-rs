@@ -20,7 +20,7 @@ fn draw_graph(g: graph_generators::Graph, filename: &str, l: Option<f32>) {
 
     let mut file = File::create(filename).unwrap();
     let svg_wr = SvgWriter::new(SvgCanvas::default_for_unit_layout(), &mut file);
-    svg_wr.draw_graph(&node_positions, &node_neighbors);
+    svg_wr.draw_graph(&node_positions, &node_neighbors, false);
 }
 
 fn main() {
