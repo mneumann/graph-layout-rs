@@ -74,7 +74,7 @@ impl<'a> SvgWriter<'a> {
         let x = self.canvas.border + (pos.0 * self.canvas.scalex) + self.canvas.offsetx;
         let y = self.canvas.border + (pos.1 * self.canvas.scaley) + self.canvas.offsety;
         writeln!(&mut self.wr,
-                 r#"<circle cx="{}" cy="{}" r="{}" stroke="{}" stroke-width="{}px" fill="{}" />"#,
+                 r#"<circle cx="{}" cy="{}" r="{}" stroke="{}" stroke-width="{}" fill="{}" />"#,
                  x,
                  y,
                  self.canvas.radius,
@@ -107,7 +107,7 @@ impl<'a> SvgWriter<'a> {
         };
 
         writeln!(&mut self.wr,
-                 r#"<path d="M{} {} L{} {} L{} {}" stroke="{}" stroke-width="{}px" {}/>"#,
+                 r#"<path d="M{} {} L{} {} L{} {}" stroke="{}" stroke-width="{}" {}/>"#,
                  x1,
                  y1,
                  mx,
