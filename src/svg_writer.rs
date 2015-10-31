@@ -121,8 +121,8 @@ impl<'a> SvgWriter<'a> {
     }
 
     pub fn draw_graph(mut self,
-                      node_positions: &Vec<P2d>,
-                      node_neighbors: &Vec<Vec<usize>>,
+                      node_positions: &[P2d],
+                      node_neighbors: &[Vec<usize>],
                       directed: bool) {
         self.header();
 

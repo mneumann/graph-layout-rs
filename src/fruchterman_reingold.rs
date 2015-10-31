@@ -12,11 +12,10 @@ use super::{Vector, P2d};
 fn attractive_force<V>(p1: &V, p2: &V, k_s: f32) -> V
     where V: Vector<Scalar = f32>
 {
-    let mut force = p1.sub(p2);
+    let force = p1.sub(p2);
     let length = force.length_squared().sqrt();
     let strength = length / k_s;
-    force.scale(strength);
-    return force;
+    return force.scale(strength);
 }
 
 // k_r == l^2
@@ -24,114 +23,162 @@ fn attractive_force<V>(p1: &V, p2: &V, k_s: f32) -> V
 fn repulsive_force<V>(p1: &V, p2: &V, k_r: f32) -> V
     where V: Vector<Scalar = f32>
 {
-    let mut force = p1.sub(p2);
+    let force = p1.sub(p2);
     let length_squared = force.length_squared();
     if length_squared > 0.0 {
         let strength = k_r / length_squared;
-        force.scale(strength);
+        return force.scale(strength);
     }
     return force;
 }
 
-fn calculate_node_forces<V>(forces: &mut [V],
-                            node_positions: &[V],
-                            node_neighbors: &[Vec<usize>],
-                            k_r: f32,
-                            k_s: f32)
-    where V: Vector<Scalar = f32>
+pub trait ForceDirected<V> where V: Vector<Scalar = f32>
 {
-    let n = forces.len();
-    assert!(node_positions.len() == n);
-    assert!(node_neighbors.len() == n);
+    fn reset_forces(&mut self);
 
-    // Reset all forces to zero.
-    for force in &mut forces[..] {
-        force.reset();
-    }
+    // adds result of `f` to force1 and substracts from force2
+    fn update_force_each_node_pair<F: Fn(&V, &V) -> V>(&mut self, f: F);
 
-    // Calculate repulsive force between all pairs.
-    for i1 in 0..n - 1 {
-        for i2 in i1 + 1..n {
-            let force = repulsive_force(&node_positions[i1], &node_positions[i2], k_r);
-            forces[i1].add_scaled(1.0, &force);
-            forces[i2].add_scaled(-1.0, &force);
-        }
-    }
+    // adds result of `f` to force1 and substracts from force2
+    fn update_force_each_edge<F: Fn(&V, &V) -> V>(&mut self, f: F);
 
-    // Calculate spring force between adjacent pairs.
-    for i1 in 0..n {
-        for i2 in node_neighbors[i1].iter().map(|&i| i as usize) {
-            let force = attractive_force(&node_positions[i1], &node_positions[i2], k_s);
-            forces[i1].add_scaled(-1.0, &force);
-            forces[i2].add_scaled(1.0, &force);
-        }
-    }
+    fn update_positions<F: FnMut(&V, &V) -> V>(&mut self, f: F);
 }
 
-fn update_node_positions<V>(forces: &[V],
-                            node_positions: &mut [V],
-                            step: f32,
-                            min_pos: &V,
-                            max_pos: &V)
-                            -> f32
-    where V: Vector<Scalar = f32>
+fn iterate<V, FD>(fd: &mut FD, step: f32, k_r: f32, k_s: f32, min_pos: &V, max_pos: &V) -> f32
+    where V: Vector<Scalar = f32>,
+          FD: ForceDirected<V>
 {
-    let n = forces.len();
-    assert!(node_positions.len() == n);
 
+    // Reset all forces to zero.
+    fd.reset_forces();
+
+    // Calculate repulsive force between all pairs.
+    fd.update_force_each_node_pair(|pos1, pos2| repulsive_force(pos1, pos2, k_r));
+
+    // Calculate spring force between adjacent pairs (edges).
+    fd.update_force_each_edge(|pos1, pos2| attractive_force(pos1, pos2, k_s).scale(-1.0));
+
+    // update positions
     let mut sum_distance = 0.0;
 
-    for i in 0..n {
-        let before = node_positions[i].clone();
+    fd.update_positions(|position, force| {
+        let mut new_pos = position.clone();
 
-        let length = forces[i].length_squared().sqrt();
+        let length = force.length_squared().sqrt();
         if length > 0.0 {
             // XXX: can we treat the scaled force as moved distance?
-            node_positions[i].add_scaled(step / length, &forces[i]);
+            new_pos.add_scaled(step / length, &force);
         }
-        node_positions[i].clip_within(min_pos, max_pos);
+        new_pos.clip_within(min_pos, max_pos);
 
         // add up the moved distance
-        sum_distance += before.sub(&node_positions[i]).length_squared().sqrt();
-    }
+        sum_distance += position.sub(&new_pos).length_squared().sqrt();
+
+        new_pos
+    });
 
     return sum_distance;
 }
 
-pub fn layout<F, V>(step_fn: F,
-                    max_iter: usize,
-                    converge_eps: f32,
-                    k_r: f32,
-                    k_s: f32,
-                    min_pos: &V,
-                    max_pos: &V,
-                    node_positions: &mut [V],
-                    node_neighbors: &[Vec<usize>])
+pub fn layout<V, FD, F>(fd: &mut FD,
+                        step_fn: F,
+                        max_iter: usize,
+                        converge_eps: f32,
+                        k_r: f32,
+                        k_s: f32,
+                        min_pos: &V,
+                        max_pos: &V)
     where V: Vector<Scalar = f32>,
+          FD: ForceDirected<V>,
           F: Fn(usize) -> f32
 {
-    let n = node_positions.len();
-    assert!(node_neighbors.len() == n);
-
-    // initialize forces
-    let mut forces: Vec<V> = (0..n).map(|_| V::new()).collect();
-
     let mut iter: usize = 0;
     while iter < max_iter {
         let step = step_fn(iter);
         iter += 1;
 
-        calculate_node_forces(&mut forces, node_positions, node_neighbors, k_r, k_s);
-        let dist_moved = update_node_positions(&forces, node_positions, step, min_pos, max_pos);
+        let dist_moved = iterate(fd, step, k_r, k_s, min_pos, max_pos);
         if dist_moved < converge_eps {
             break;
         }
     }
 }
 
-pub fn layout_typical_2d(l: Option<f32>,
-                         node_positions: &mut [P2d],
-                         node_neighbors: &[Vec<usize>]) {
+
+
+pub struct Layout<'a, V> {
+    forces: Vec<V>,
+    node_positions: Vec<V>,
+    node_neighbors: &'a [Vec<usize>],
+}
+
+impl<'a, V> Layout<'a, V> where
+V:Vector<Scalar = f32> {
+
+    pub fn new<'b>(node_positions: Vec<V>, node_neighbors: &'b [Vec<usize>]) -> Layout<'b, V> {
+        let n = node_positions.len();
+        assert!(node_neighbors.len() == n);
+        Layout {
+            forces: (0..n).map(|_| V::new()).collect(), // initialize forces
+            node_positions: node_positions,
+            node_neighbors: node_neighbors,
+        }
+    }
+
+    pub fn node_positions(&self) -> &[V] {
+        &self.node_positions[..]
+    }
+}
+
+impl<'a, V> ForceDirected<V> for Layout<'a, V> where V:Vector<Scalar = f32> {
+    fn reset_forces(&mut self) {
+        for f in self.forces.iter_mut() {
+            f.reset();
+        }
+    }
+
+    fn update_force_each_node_pair<F: Fn(&V, &V) -> V>(&mut self, f: F) {
+        let n = self.node_positions.len();
+        assert!(n == self.forces.len());
+
+        for i1 in 0..n - 1 {
+            for i2 in i1 + 1..n {
+                let force = f(&self.node_positions[i1], &self.node_positions[i2]);
+                self.forces[i1].add_scaled(1.0, &force);
+                self.forces[i2].add_scaled(-1.0, &force);
+            }
+        }
+    }
+
+    fn update_force_each_edge<F: Fn(&V, &V) -> V>(&mut self, f: F) {
+        let n = self.node_positions.len();
+        assert!(n == self.forces.len());
+
+        for i1 in 0..n {
+            for &i2 in self.node_neighbors[i1].iter() {
+                let force = f(&self.node_positions[i1], &self.node_positions[i2]);
+                self.forces[i1].add_scaled(1.0, &force);
+                self.forces[i2].add_scaled(-1.0, &force);
+            }
+        }
+    }
+
+    fn update_positions<F: FnMut(&V, &V) -> V>(&mut self, mut f: F) {
+        let n = self.node_positions.len();
+        assert!(n == self.forces.len());
+
+        for i in 0..n {
+            let new_pos = f(&self.node_positions[i], &self.forces[i]);
+            self.node_positions[i] = new_pos;
+        }
+    }
+}
+
+pub fn layout_typical_2d<'a>(l: Option<f32>,
+                             node_positions: Vec<P2d>,
+                             node_neighbors: &'a [Vec<usize>])
+                             -> Layout<'a, P2d> {
     let n = node_positions.len();
     assert!(node_neighbors.len() == n);
 
@@ -150,13 +197,14 @@ pub fn layout_typical_2d(l: Option<f32>,
     let k_r = l * l;
     let k_s = l;
 
-    layout(step_fn,
+    let mut lay = Layout::new(node_positions, node_neighbors);
+    layout(&mut lay,
+           step_fn,
            MAX_ITER,
            EPS,
            k_r,
            k_s,
            &min_pos,
-           &max_pos,
-           node_positions,
-           node_neighbors);
+           &max_pos);
+    return lay;
 }

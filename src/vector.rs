@@ -3,7 +3,7 @@ pub trait Vector: Clone {
 
     fn length_squared(&self) -> Self::Scalar;
 
-    fn scale(&mut self, factor: Self::Scalar);
+    fn scale(&self, factor: Self::Scalar) -> Self;
 
     fn sub(&self, other: &Self) -> Self;
 
@@ -35,9 +35,8 @@ impl Vector for P2d {
         self.1 = 0.0;
     }
 
-    fn scale(&mut self, factor: f32) {
-        self.0 *= factor;
-        self.1 *= factor;
+    fn scale(&self, factor: f32) -> Self {
+        P2d(self.0 * factor, self.1 * factor)
     }
 
     fn sub(&self, other: &Self) -> Self {

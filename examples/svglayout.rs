@@ -8,19 +8,25 @@ use graph_layout::svg_writer::{SvgCanvas, SvgWriter};
 use std::fs::File;
 
 fn draw_graph(g: graph_generators::Graph, filename: &str, l: Option<f32>) {
-    let mut node_positions: Vec<P2d> = g.nodes.iter().map(|_| P2d(random::<Closed01<f32>>().0, random::<Closed01<f32>>().0)).collect();
+    let node_positions: Vec<P2d> = g.nodes
+                                    .iter()
+                                    .map(|_| {
+                                        P2d(random::<Closed01<f32>>().0,
+                                            random::<Closed01<f32>>().0)
+                                    })
+                                    .collect();
     let mut node_neighbors: Vec<Vec<usize>> = g.nodes.iter().map(|_| Vec::new()).collect();
     for &(src, dst) in g.edges.iter() {
         node_neighbors[src].push(dst);
     }
 
-    graph_layout::fruchterman_reingold::layout_typical_2d(l,
-                                            &mut node_positions[..],
-                                            &node_neighbors);
+    let layout = graph_layout::fruchterman_reingold::layout_typical_2d(l,
+                                                                       node_positions,
+                                                                       &node_neighbors);
 
     let mut file = File::create(filename).unwrap();
     let svg_wr = SvgWriter::new(SvgCanvas::default_for_unit_layout(), &mut file);
-    svg_wr.draw_graph(&node_positions, &node_neighbors, false);
+    svg_wr.draw_graph(layout.node_positions(), &node_neighbors, false);
 }
 
 fn main() {
@@ -81,7 +87,7 @@ fn main() {
         let _ = g.add_node();
     }
     for i in 0..n {
-        g.add_edge((i, (i+1)%n));
+        g.add_edge((i, (i + 1) % n));
     }
     draw_graph(g, "circle_50.svg", Some(0.01));
 }
