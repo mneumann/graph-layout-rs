@@ -11,7 +11,7 @@ pub trait Vector: Clone {
 
     fn reset(&mut self);
 
-    fn clip_within(&mut self, min: &Self, max: &Self);
+    fn clip_within(&self, min: &Self, max: &Self) -> Self;
 
     fn new() -> Self;
 }
@@ -48,17 +48,20 @@ impl Vector for P2d {
         self.1 += factor * other.1;
     }
 
-    fn clip_within(&mut self, min: &Self, max: &Self) {
-        if self.0 < min.0 {
-            self.0 = min.0
-        } else if self.0 > max.0 {
-            self.0 = max.0
-        }
-
-        if self.1 < min.1 {
-            self.1 = min.1
-        } else if self.1 > max.1 {
-            self.1 = max.1
-        }
+    fn clip_within(&self, min: &Self, max: &Self) -> Self {
+        P2d(if self.0 < min.0 {
+                min.0
+            } else if self.0 > max.0 {
+                max.0
+            } else {
+                self.0
+            },
+            if self.1 < min.1 {
+                min.1
+            } else if self.1 > max.1 {
+                max.1
+            } else {
+                self.1
+            })
     }
 }

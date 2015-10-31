@@ -67,15 +67,12 @@ fn iterate<V, FD>(fd: &mut FD, step: f32, k_r: f32, k_s: f32, min_pos: &V, max_p
 
         let length = force.length_squared().sqrt();
         if length > 0.0 {
-            // XXX: can we treat the scaled force as moved distance?
             new_pos.add_scaled(step / length, &force);
+
+            // add up the moved distance. we move by step.
+            sum_distance += step;
         }
-        new_pos.clip_within(min_pos, max_pos);
-
-        // add up the moved distance
-        sum_distance += position.sub(&new_pos).length_squared().sqrt();
-
-        new_pos
+        new_pos.clip_within(min_pos, max_pos)
     });
 
     return sum_distance;
