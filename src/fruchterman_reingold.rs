@@ -102,18 +102,18 @@ pub fn layout<V, FD, F>(fd: &mut FD,
     }
 }
 
-
-
-pub struct Layout<'a, V> {
+struct Layout<'a, 'b, V: 'a> {
     forces: Vec<V>,
-    node_positions: Vec<V>,
-    node_neighbors: &'a [Vec<usize>],
+    node_positions: &'a mut Vec<V>,
+    node_neighbors: &'b [Vec<usize>],
 }
 
-impl<'a, V> Layout<'a, V> where
+impl<'a, 'b, V> Layout<'a, 'b, V> where
 V:Vector<Scalar = f32> {
 
-    pub fn new<'b>(node_positions: Vec<V>, node_neighbors: &'b [Vec<usize>]) -> Layout<'b, V> {
+    fn new<'c, 'd>(node_positions: &'c mut Vec<V>,
+                   node_neighbors: &'d [Vec<usize>])
+                   -> Layout<'c, 'd, V> {
         let n = node_positions.len();
         assert!(node_neighbors.len() == n);
         Layout {
@@ -122,13 +122,9 @@ V:Vector<Scalar = f32> {
             node_neighbors: node_neighbors,
         }
     }
-
-    pub fn node_positions(&self) -> &[V] {
-        &self.node_positions[..]
-    }
 }
 
-impl<'a, V> ForceDirected<V> for Layout<'a, V> where V:Vector<Scalar = f32> {
+impl<'a, 'b, V> ForceDirected<V> for Layout<'a, 'b, V> where V:Vector<Scalar = f32> {
     fn reset_forces(&mut self) {
         for f in self.forces.iter_mut() {
             f.reset();
@@ -172,10 +168,9 @@ impl<'a, V> ForceDirected<V> for Layout<'a, V> where V:Vector<Scalar = f32> {
     }
 }
 
-pub fn layout_typical_2d<'a>(l: Option<f32>,
-                             node_positions: Vec<P2d>,
-                             node_neighbors: &'a [Vec<usize>])
-                             -> Layout<'a, P2d> {
+pub fn layout_typical_2d<'a, 'b>(l: Option<f32>,
+                                 node_positions: &'a mut Vec<P2d>,
+                                 node_neighbors: &'b [Vec<usize>]) {
     let n = node_positions.len();
     assert!(node_neighbors.len() == n);
 
@@ -203,5 +198,4 @@ pub fn layout_typical_2d<'a>(l: Option<f32>,
            k_s,
            &min_pos,
            &max_pos);
-    return lay;
 }
