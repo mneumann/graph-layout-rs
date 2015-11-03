@@ -2,7 +2,7 @@ extern crate graph_layout;
 extern crate graph_generators;
 extern crate rand;
 
-use rand::{random, Closed01};
+use rand::{Closed01, random};
 use graph_layout::P2d;
 use graph_layout::svg_writer::{SvgCanvas, SvgWriter};
 use std::fs::File;

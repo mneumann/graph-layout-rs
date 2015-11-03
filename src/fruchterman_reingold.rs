@@ -5,7 +5,7 @@
 /// [1]: http://emr.cs.iit.edu/~reingold/force-directed.pdf
 ///
 
-use super::{Vector, P2d};
+use super::{P2d, Vector};
 
 // k_s == l
 #[inline]
