@@ -108,9 +108,8 @@ struct Layout<'a, 'b, V: 'a> {
     node_neighbors: &'b [Vec<usize>],
 }
 
-impl<'a, 'b, V> Layout<'a, 'b, V> where
-V:Vector<Scalar = f32> {
-
+impl<'a, 'b, V> Layout<'a, 'b, V> where V: Vector<Scalar = f32>
+{
     fn new<'c, 'd>(node_positions: &'c mut Vec<V>,
                    node_neighbors: &'d [Vec<usize>])
                    -> Layout<'c, 'd, V> {
@@ -124,7 +123,8 @@ V:Vector<Scalar = f32> {
     }
 }
 
-impl<'a, 'b, V> ForceDirected<V> for Layout<'a, 'b, V> where V:Vector<Scalar = f32> {
+impl<'a, 'b, V> ForceDirected<V> for Layout<'a, 'b, V> where V: Vector<Scalar = f32>
+{
     fn reset_forces(&mut self) {
         for f in self.forces.iter_mut() {
             f.reset();
