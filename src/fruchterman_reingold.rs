@@ -106,9 +106,11 @@ struct Layout<'a, 'b, V: 'a> {
     forces: Vec<V>,
     node_positions: &'a mut Vec<V>,
     node_neighbors: &'b [Vec<usize>],
+    lock_first_n_positions: usize,
 }
 
-impl<'a, 'b, V> Layout<'a, 'b, V> where V: Vector<Scalar = f32>
+impl<'a, 'b, V> Layout<'a, 'b, V>
+    where V: Vector<Scalar = f32>
 {
     fn new<'c, 'd>(node_positions: &'c mut Vec<V>,
                    node_neighbors: &'d [Vec<usize>])
@@ -119,11 +121,17 @@ impl<'a, 'b, V> Layout<'a, 'b, V> where V: Vector<Scalar = f32>
             forces: (0..n).map(|_| V::new()).collect(), // initialize forces
             node_positions: node_positions,
             node_neighbors: node_neighbors,
+            lock_first_n_positions: 0,
         }
+    }
+
+    fn lock_first_n_positions(&mut self, n: usize) {
+        self.lock_first_n_positions = n;
     }
 }
 
-impl<'a, 'b, V> ForceDirected<V> for Layout<'a, 'b, V> where V: Vector<Scalar = f32>
+impl<'a, 'b, V> ForceDirected<V> for Layout<'a, 'b, V>
+    where V: Vector<Scalar = f32>
 {
     fn reset_forces(&mut self) {
         for f in self.forces.iter_mut() {
@@ -161,7 +169,7 @@ impl<'a, 'b, V> ForceDirected<V> for Layout<'a, 'b, V> where V: Vector<Scalar = 
         let n = self.node_positions.len();
         assert!(n == self.forces.len());
 
-        for i in 0..n {
+        for i in self.lock_first_n_positions..n {
             let new_pos = f(&self.node_positions[i], &self.forces[i]);
             self.node_positions[i] = new_pos;
         }
@@ -170,7 +178,8 @@ impl<'a, 'b, V> ForceDirected<V> for Layout<'a, 'b, V> where V: Vector<Scalar = 
 
 pub fn layout_typical_2d<'a, 'b>(l: Option<f32>,
                                  node_positions: &'a mut Vec<P2d>,
-                                 node_neighbors: &'b [Vec<usize>]) {
+                                 node_neighbors: &'b [Vec<usize>],
+                                 lock_first_n_positions: usize) {
     let n = node_positions.len();
     assert!(node_neighbors.len() == n);
 
@@ -190,6 +199,7 @@ pub fn layout_typical_2d<'a, 'b>(l: Option<f32>,
     let k_s = l;
 
     let mut lay = Layout::new(node_positions, node_neighbors);
+    lay.lock_first_n_positions(lock_first_n_positions);
     layout(&mut lay,
            step_fn,
            MAX_ITER,
