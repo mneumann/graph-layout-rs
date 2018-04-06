@@ -20,7 +20,7 @@ fn draw_graph(g: graph_generators::Graph, filename: &str, l: Option<f32>) {
         node_neighbors[src].push(dst);
     }
 
-    graph_layout::fruchterman_reingold::layout_typical_2d(l, &mut node_positions, &node_neighbors);
+    graph_layout::fruchterman_reingold::layout_typical_2d(l, &mut node_positions, &node_neighbors, 0);
 
     let mut file = File::create(filename).unwrap();
     let svg_wr = SvgWriter::new(SvgCanvas::default_for_unit_layout(), &mut file);
